@@ -1,6 +1,6 @@
 # siok: Consul Agent's Service Health Aggregator API
 
-*Picture this*: you have a need to know that some network-attached service is functioning correctly, but the service in question doesn't include a /health route, it doesn't cache its health-check results and/or the health-checks don't cover all the dependent services **and** you're running Consul while you're reading this; well you're in luck: this API is for *you*.
+*Picture this*: you have a need to know that some network-attached service is functioning correctly, but the service in question doesn't include a ```/health``` route, it doesn't cache its health-check results and/or the health-checks don't cover all the dependent services **and** you're running Consul while you're reading this; well you're in luck: this API is for *you*.
 
 ## What is siok?
 **siok** is a simple API which aggregates and translates the health of a service a Consul Agent registers and monitors, alongside the health of the related entities, such as node health, service- and node-maintenance, in a JSON array of all entities related to the service with a HTTP 200 status code if all are passing, 503 otherwise.
@@ -9,7 +9,6 @@ In other words, you register a service **bar** with one health-check on the Cons
 
 ```json
 [
-
     {
         "CheckID": "service:foo",
         "Name": "Service 'foo' check",
@@ -18,7 +17,6 @@ In other words, you register a service **bar** with one health-check on the Cons
         "ServiceID": "foo",
         "Status": "passing"
     }
-
 ]
 ```
 
@@ -31,12 +29,12 @@ http://foo:31998/health?service=bar
 ```
 to get the health-check details regarding the service **bar** on host **foo**.
 
-## Instructions
+## Running siok
 **siok** supports only one flag, ```-p```, to specify the port it'll run on. The default is **31998**.
 
 It expects the Consul Agent HTTP API on ```http://localhost:8500```.
 
-It only has one route, ```/health``` and only one query string parameter at the moment, ```service```, to specify the Consul ```ServiceID``` on the node in question. Note that ```ServiceID``` *can* differ from the Service ```Name```, so make sure you get it right. Ie. this is how an URL should look like:
+It only has one route, ```/health``` and only one query string parameter at the moment, ```service```, to specify the Consul ```ServiceID``` on the node in question. Note that ```ServiceID``` *can* differ from the ```ServiceName```, so make sure you get it right. Ie. this is how an URL should look like:
 
 ```
 /health?service=$serviceID
@@ -45,7 +43,7 @@ It only has one route, ```/health``` and only one query string parameter at the 
 Expect HTTP 200 if okay, 503 otherwise. On top of that, additional info is in the JSON array returned.
 
 ## Details
-**siok** uses the responses from the local Consul Agent and doesn't query the Consul Catalog at all. That's why it needs to run local to the Consul Agent which monitors the services it has registered, but that makes it really lightweight and fast, so my guess is that it'll scale nicely. Most of the requests finish in under one millisecond: for example, when testing it with 2000 remote requests with the concurrency of 100, with one Consul Service underneath, I got *all* responses back within 250 milliseconds (yeah, *all* 2000 requests), so I guess you could say it's fast.
+**siok** uses the responses from the local Consul Agent and doesn't query the Consul Catalog at all. That's why it needs to run local to the Consul Agent which monitors the services it has registered and that makes it really lightweight and fast, so my guess is that it'll scale nicely. Most of the requests finish in under one millisecond: for example, when testing it with 2000 remote requests with the concurrency of 100, with one Consul Service underneath, I got *all* responses back within 250 milliseconds (yeah, *all* 2000 requests), so I guess you could say it's fast.
 
 ## TL;DR
 Use Consul Agent to register the service and its health-checks. Use **siok** to see the service's health remotely.
