@@ -3,7 +3,7 @@
 *Picture this*: you have a need to know that some network-attached service is functioning correctly, but the service in question doesn't include a ```/health``` route, it doesn't cache its health-check results and/or the health-checks don't cover all the dependent services **and** you're running Consul while you're reading this; well you're in luck: this API is for *you*.
 
 ## What is siok?
-**siok** is a simple API which aggregates and translates the health of a service a Consul Agent registers and monitors, alongside the health of the related entities, such as node health, service- and node-maintenance, in a JSON array of all entities related to the service with a HTTP 200 status code if all are passing, 503 otherwise.
+**siok** is a simple API which aggregates and translates the health of a service a Consul Agent registers and monitors, alongside the health of the related entities, such as node health, service- and node-maintenance, in a JSON array of all entities related to the service with a HTTP 200 status code if all are "passing" and/or "warning", 503 otherwise.
 
 In other words, you register a service **bar** with one health-check on the Consul-enabled host **foo**, you send a GET request to ```http://foo:31998/health?service=bar```, you get this HTTP 200 response back:
 
@@ -40,7 +40,7 @@ It only has one route, ```/health``` and only one query string parameter at the 
 /health?service=$serviceID
 ```
 
-Expect HTTP 200 if okay, 503 otherwise. On top of that, additional info is in the JSON array returned.
+Expect HTTP 200 if "passing"/"warning", 503 otherwise. On top of that, additional info is in the JSON array returned and a ```Warning``` HTTP response header is included if any of the checks are in the "warning" state.
 
 ## Details
 **siok** uses the responses from the local Consul Agent and doesn't query the Consul Catalog at all. That's why it needs to run local to the Consul Agent which monitors the services it has registered and that makes it really lightweight and fast, so my guess is that it'll scale nicely. Most of the requests finish in under one millisecond: for example, when testing it with 2000 remote requests with the concurrency of 100, with one Consul Service underneath, I got *all* responses back within 250 milliseconds (yeah, *all* 2000 requests), so I guess you could say it's fast.

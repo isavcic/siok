@@ -17,8 +17,8 @@ func init() {
 	pflag.Parse()
 }
 
-// parseServiceListing creates an aggregate check output related
-func parseServiceListing(serviceID string) []Check {
+// getChecks creates an aggregate check output related
+func getChecks(serviceID string) []Check {
 
 	var checks []Check
 
@@ -63,10 +63,39 @@ func parseServiceListing(serviceID string) []Check {
 	})
 
 	if !serviceExists {
-		checks = append(checks, Check{ServiceID: serviceID, Output: "No such service", Status: "critical"})
+		checks = append(checks, Check{ServiceID: serviceID, Output: "No such service or no check associated with it", Status: "critical"})
 
 	}
 	return checks
+}
+
+// parseChecks returns the status, in the following order: critical > warning > passing
+func parseChecks(checks []Check) string {
+	var passing, warning, critical bool
+
+	for _, check := range checks {
+		switch check.Status {
+		case "passing":
+			passing = true
+		case "warning":
+			warning = true
+		case "critical":
+			critical = true
+		default:
+			passing = true
+		}
+	}
+
+	switch {
+	case critical:
+		return "critical"
+	case warning:
+		return "warning"
+	case passing:
+		return "passing"
+	default:
+		return "passing"
+	}
 }
 
 func getServiceHealth(c *gin.Context) {
@@ -74,18 +103,9 @@ func getServiceHealth(c *gin.Context) {
 	var service Service
 	c.BindQuery(&service)
 
-	checks := parseServiceListing(service.ID)
+	checks := getChecks(service.ID)
 
-	// status is an "internal" variable (not returned to the client by the API)
-	// which, when not "passing", will cause us to return HTTP 503, so there's currently no need
-	// to be extra pedantic here, ie. we only care if it's not "passing"
-	status := "passing"
-	for _, check := range checks {
-		if check.Status != "passing" {
-			status = check.Status
-			break
-		}
-	}
+	aggregatedStatus := parseChecks(checks)
 
 	// converting checks to an interface to be used by c.JSON
 	var interfaceSlice = make([]interface{}, len(checks))
@@ -93,10 +113,14 @@ func getServiceHealth(c *gin.Context) {
 		interfaceSlice[i] = check
 	}
 
-	if string(status) != "passing" {
-		c.JSON(503, interfaceSlice)
-	} else {
+	switch aggregatedStatus {
+	case "passing":
 		c.JSON(200, interfaceSlice)
+	case "warning":
+		c.Header("Warning", "Some Consul checks failed, please investigate")
+		c.JSON(200, interfaceSlice)
+	case "critical":
+		c.JSON(503, interfaceSlice)
 	}
 }
 
