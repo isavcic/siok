@@ -29,6 +29,16 @@ http://foo:31998/health?service=bar
 ```
 to get the health-check details regarding the service **bar** on host **foo**.
 
+## Building siok
+1. Clone the repo and cd to its directory
+2.
+   If you have Golang already installed, just run ```make```
+   
+   Or, if you have Docker installed and you want to build **siok** using the Golang Docker image:
+   ```
+   docker run --rm -v "$PWD":/usr/src/siok -w /usr/src/siok golang:1.8 make
+   ```
+
 ## Running siok
 **siok** supports only one flag, ```-p```, to specify the port it'll run on. The default is **31998**.
 
