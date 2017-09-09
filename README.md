@@ -1,4 +1,4 @@
-# siok: Consul Agent's Service Health Aggregator API
+# siok: Consul Service Health Aggregator API
 
 *Picture this*: you have a need to know that some network-attached service is functioning correctly, but the service in question doesn't include a ```/health``` route, it doesn't cache its health-check results and/or the health-checks don't cover all the dependent services **and** you're running Consul while you're reading this; well you're in luck: this API is for *you*.
 
