@@ -13,9 +13,11 @@ import (
 )
 
 var listenPort uint
+var consulAddressAndPort string
 
 func init() {
-	pflag.UintVarP(&listenPort, "port", "p", 31998, "API listening port")
+	pflag.UintVarP(&listenPort, "port", "p", 31998, "siok listening port")
+	pflag.StringVarP(&consulAddressAndPort, "agent", "a", "127.0.0.1:8500", "Consul Agent IP:port")
 	pflag.Parse()
 }
 
@@ -24,7 +26,7 @@ func getChecks(serviceID string) []Check {
 
 	var checks []Check
 
-	res, err := http.Get("http://127.0.0.1:8500/v1/agent/checks")
+	res, err := http.Get(fmt.Sprintf("http://%v/v1/agent/checks", consulAddressAndPort))
 	if err != nil {
 		// failure to connect to local agent should return critical
 		checks = append(checks, Check{Output: err.Error(), Notes: "Consul Agent unavailable", Status: "critical"})
