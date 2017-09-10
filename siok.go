@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ogier/pflag"
@@ -25,7 +27,7 @@ func getChecks(serviceID string) []Check {
 	res, err := http.Get("http://127.0.0.1:8500/v1/agent/checks")
 	if err != nil {
 		// failure to connect to local agent should return critical
-		checks = append(checks, Check{Output: err.Error(), Status: "critical"})
+		checks = append(checks, Check{Output: err.Error(), Notes: "Consul Agent unavailable", Status: "critical"})
 		return checks
 	}
 	defer res.Body.Close()
@@ -33,7 +35,7 @@ func getChecks(serviceID string) []Check {
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		// failure to parse the response from the local agent should return critical
-		checks = append(checks, Check{Output: err.Error(), Status: "critical"})
+		checks = append(checks, Check{Output: err.Error(), Notes: "Failed to parse the response from the Consul Agent", Status: "critical"})
 		return checks
 	}
 
@@ -128,7 +130,12 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	route := gin.Default()
 	route.GET("/health", getServiceHealth)
-	route.Run(fmt.Sprintf(":%v", listenPort))
+	log.Printf("Running siok on port %v...", listenPort)
+	err := route.Run(fmt.Sprintf(":%v", listenPort))
+	if err != nil {
+		log.Printf("siok failed to start: %v", err.Error())
+		os.Exit(1)
+	}
 }
 
 // Service defines the data parsed from URL's querystring
