@@ -1,5 +1,7 @@
 # siok: Consul Service Health Aggregator API
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/isavcic/siok)](https://goreportcard.com/report/github.com/isavcic/siok)
+
 *Picture this*: you need to know that some network-attached service is functioning correctly, but the service in question doesn't include a ```/health``` route, it doesn't cache its health-check results and/or the health-checks don't cover all the dependent services **and** you're running Consul while you're reading this; well you're in luck: this API is for *you*.
 
 ## What is siok
