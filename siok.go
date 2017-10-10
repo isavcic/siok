@@ -104,13 +104,11 @@ func parseChecks(checks []Check) string {
 
 func getServiceHealth(c *gin.Context) {
 
-	var service Service
-	var warn Warn
-	c.BindQuery(&service)
-	c.BindQuery(&warn)
-	warnEnabled := parseBoolValue(warn.warn)
+	var queryString QueryString
+	c.BindQuery(&queryString)
+	warnEnabled := parseBoolValue(queryString.Warn)
 
-	checks := getChecks(service.ID)
+	checks := getChecks(queryString.ServiceID)
 
 	aggregatedStatus := parseChecks(checks)
 
@@ -154,14 +152,10 @@ func main() {
 	}
 }
 
-// Service defines the data parsed from URL's querystring
-type Service struct {
-	ID string `form:"service"`
-}
-
-// Warn defines the data parsed from URL's querystring
-type Warn struct {
-	warn string `form:"warn"`
+// QueryString defines the data parsed from URL's querystring
+type QueryString struct {
+	ServiceID string `form:"service"`
+	Warn      string `form:"warn"`
 }
 
 // Check defines the check data to be returned via the API's JSON response
