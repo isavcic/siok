@@ -105,7 +105,10 @@ func parseChecks(checks []Check) string {
 func getServiceHealth(c *gin.Context) {
 
 	var service Service
+	var warn Warn
 	c.BindQuery(&service)
+	c.BindQuery(&warn)
+	warnEnabled := parseBoolValue(warn.warn)
 
 	checks := getChecks(service.ID)
 
@@ -121,11 +124,22 @@ func getServiceHealth(c *gin.Context) {
 	case "passing":
 		c.JSON(200, interfaceSlice)
 	case "warning":
-		c.Header("Warning", "Some Consul checks failed, please investigate")
-		c.JSON(200, interfaceSlice)
+		if warnEnabled {
+			c.Header("Warning", "Some Consul checks failed, please investigate")
+			c.JSON(200, interfaceSlice)
+		} else {
+			c.JSON(503, interfaceSlice)
+		}
 	case "critical":
 		c.JSON(503, interfaceSlice)
 	}
+}
+
+func parseBoolValue(val string) bool {
+	if val == "true" {
+		return true
+	}
+	return false
 }
 
 func main() {
@@ -143,6 +157,11 @@ func main() {
 // Service defines the data parsed from URL's querystring
 type Service struct {
 	ID string `form:"service"`
+}
+
+// Warn defines the data parsed from URL's querystring
+type Warn struct {
+	warn string `form:"warn"`
 }
 
 // Check defines the check data to be returned via the API's JSON response
