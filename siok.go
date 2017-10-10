@@ -14,6 +14,7 @@ import (
 
 var listenPort uint
 var consulAddressAndPort string
+var version string
 
 func init() {
 	pflag.UintVarP(&listenPort, "port", "p", 31998, "siok listening port")
@@ -144,7 +145,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	route := gin.Default()
 	route.GET("/health", getServiceHealth)
-	log.Printf("Running siok on port %v...", listenPort)
+	log.Printf("Running siok (git tag %v) on port %v...", version, listenPort)
 	err := route.Run(fmt.Sprintf(":%v", listenPort))
 	if err != nil {
 		log.Printf("siok failed to start: %v", err.Error())
