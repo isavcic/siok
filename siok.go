@@ -145,7 +145,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	route := gin.Default()
 	route.GET("/health", getServiceHealth)
-	log.Printf("Running siok (git tag %v) on port %v...", version, listenPort)
+	log.Printf("Running siok (rev %v) on port %v...", version, listenPort)
 	err := route.Run(fmt.Sprintf(":%v", listenPort))
 	if err != nil {
 		log.Printf("siok failed to start: %v", err.Error())
