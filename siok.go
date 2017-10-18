@@ -103,13 +103,62 @@ func parseChecks(checks []Check) string {
 	}
 }
 
+func getRemoteChecks(serviceID, tag string) []Check {
+	var checks []Check
+
+	if len(tag) != 0 {
+		tag = fmt.Sprintf("&tag=%v", tag)
+	}
+
+	res, err := http.Get(fmt.Sprintf("http://localhost:8500/v1/health/service/%v?passing=true%v", serviceID, tag))
+	if err != nil {
+		// failure to connect to local agent should return critical
+		checks = append(checks, Check{Output: err.Error(), Notes: "Consul Agent unavailable", Status: "critical"})
+		return checks
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		// failure to parse the response from the local agent should return critical
+		checks = append(checks, Check{Output: err.Error(), Notes: "Failed to parse the response from the Consul Agent", Status: "critical"})
+		return checks
+	}
+
+	var check Check
+	result := gjson.ParseBytes(body)
+	numPassing := len(result.Array())
+
+	check.ServiceID = serviceID
+	check.Name = serviceID
+	check.Output = fmt.Sprintf("Number of passing instances: %v", numPassing)
+	check.CheckID = fmt.Sprintf("remote_service:%v", serviceID)
+
+	if numPassing > 0 {
+		check.Status = "passing"
+	} else {
+		check.Status = "critical"
+	}
+
+	checks = append(checks, check)
+	return checks
+
+}
+
 func getServiceHealth(c *gin.Context) {
 
 	var queryString QueryString
 	c.BindQuery(&queryString)
 	warnEnabled := parseBoolValue(queryString.Warn)
+	remoteService := parseBoolValue(queryString.Remote)
 
-	checks := getChecks(queryString.ServiceID)
+	var checks []Check
+
+	if !remoteService {
+		checks = getChecks(queryString.ServiceID)
+	} else {
+		checks = getRemoteChecks(queryString.ServiceID, queryString.Tag)
+	}
 
 	aggregatedStatus := parseChecks(checks)
 
@@ -157,6 +206,8 @@ func main() {
 type QueryString struct {
 	ServiceID string `form:"service"`
 	Warn      string `form:"warn"`
+	Remote    string `form:"remote"`
+	Tag       string `form:"tag"`
 }
 
 // Check defines the check data to be returned via the API's JSON response
